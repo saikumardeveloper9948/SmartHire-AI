@@ -220,7 +220,7 @@ Create a `.env` file in `backend` based on the variables listed above.
 - **Step 4**: Run FastAPI with Uvicorn
 
 ```bash
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
 
 ---

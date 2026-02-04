@@ -37,6 +37,7 @@ async def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     user = models.User(
         name=user_in.name,
         email=user_in.email,
+        is_email_verified=False,
         password_hash=get_password_hash(user_in.password),
     )
     db.add(user)
@@ -57,6 +58,9 @@ def verify_otp(payload: schemas.OTPVerifyRequest, db: Session = Depends(get_db))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if verify_otp_code(db, user, payload.otp):
+        # Mark email as verified only after OTP is confirmed
+        user.is_email_verified = True
+        db.commit()
         return {"message": "OTP verified successfully"}
 
     raise HTTPException(

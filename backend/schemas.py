@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -14,7 +15,7 @@ class UserCreate(UserBase):
 
 
 class UserOut(BaseModel):
-    id: int
+    id: str
     name: str
     email: EmailStr
     is_email_verified: bool
