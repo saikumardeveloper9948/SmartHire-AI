@@ -9,8 +9,4 @@ __pycache__/
 .vscode/
 .idea/
 
-# Env files
-.env
-backend/.env
-frontend/.env
 
