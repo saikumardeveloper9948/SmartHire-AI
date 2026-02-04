@@ -1,0 +1,2 @@
+# SmartHire-AI
+REACT, PYTHON, MYSQL
