@@ -6,6 +6,7 @@ import Alert from "./components/Alert";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import VerifyOtp from "./pages/VerifyOtp";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import ResumeMatch from "./pages/ResumeMatch";
 
@@ -80,6 +81,7 @@ const App = () => {
           <Route path="/login" element={<Login showAlert={showAlert} />} />
           <Route path="/signup" element={<Signup showAlert={showAlert} />} />
           <Route path="/verify-otp" element={<VerifyOtp showAlert={showAlert} />} />
+          <Route path="/forgot-password" element={<ForgotPassword showAlert={showAlert} />} />
           <Route
             path="/dashboard"
             element={

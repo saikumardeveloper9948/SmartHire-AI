@@ -14,6 +14,31 @@ def generate_otp() -> str:
     return f"{randint(100000, 999999)}"
 
 
+async def send_forgot_password_otp(recipient_email: str, user_name: str, otp_code: str) -> None:
+    """Send OTP for forgot password flow."""
+    message = EmailMessage()
+    message["From"] = settings.EMAIL_USER
+    message["To"] = recipient_email
+    message["Subject"] = "SmartHire AI - Password Reset Code"
+
+    body = (
+        f"Dear {user_name},\n\n"
+        f"Your SmartHire AI password reset code is {otp_code}.\n\n"
+        "This code is valid for 5 minutes. If you did not request this, please ignore this email.\n\n"
+        "— SmartHire AI"
+    )
+    message.set_content(body)
+
+    await aiosmtplib.send(
+        message,
+        hostname=settings.EMAIL_HOST,
+        port=settings.EMAIL_PORT,
+        start_tls=True,
+        username=settings.EMAIL_USER,
+        password=settings.EMAIL_PASS,
+    )
+
+
 async def send_otp_email(recipient_email: str, user_name: str, otp_code: str) -> None:
     message = EmailMessage()
     message["From"] = settings.EMAIL_USER

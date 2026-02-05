@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import PasswordInput from "../components/PasswordInput";
 
 const Login = ({ showAlert }) => {
   const navigate = useNavigate();
@@ -46,14 +47,20 @@ const Login = ({ showAlert }) => {
         </div>
         <div>
           <label className="block text-sm mb-1">Password</label>
-          <input
-            type="password"
+          <PasswordInput
             name="password"
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700"
           />
+        </div>
+        <div className="text-right">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            Forgot Password?
+          </Link>
         </div>
         <button
           type="submit"

@@ -36,12 +36,36 @@ class LoginRequest(BaseModel):
 
 
 class OTPVerifyRequest(BaseModel):
+    signup_token: str
     email: EmailStr
     otp: str = Field(..., min_length=4, max_length=6)
 
 
 class ResendOTPRequest(BaseModel):
+    signup_token: str
     email: EmailStr
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    reset_token: str
+    email: EmailStr
+    new_password: str = Field(..., min_length=6)
+    confirm_password: str = Field(..., min_length=6)
+
+
+class ResendForgotOTPRequest(BaseModel):
+    reset_token: str
+    email: EmailStr
+
+
+class VerifyForgotOTPRequest(BaseModel):
+    reset_token: str
+    email: EmailStr
+    otp: str = Field(..., min_length=4, max_length=6)
 
 
 class ResumeAnalysisRequest(BaseModel):

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
+import PasswordInput from "../components/PasswordInput";
 
 const Signup = ({ showAlert }) => {
   const navigate = useNavigate();
@@ -15,9 +16,11 @@ const Signup = ({ showAlert }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/auth/signup", form);
-      showAlert("success", "Signup successful. Check your email for OTP.");
-      navigate("/verify-otp", { state: { email: form.email } });
+      const { data } = await api.post("/auth/signup", form);
+      showAlert("success", "OTP has been sent to your email address. Please check your inbox.");
+      navigate("/verify-otp", {
+        state: { email: form.email, signupToken: data.signup_token, expiresAt: data.expires_at },
+      });
     } catch (err) {
       const msg = err.response?.data?.detail || "Signup failed";
       showAlert("error", msg);
@@ -53,14 +56,12 @@ const Signup = ({ showAlert }) => {
         </div>
         <div>
           <label className="block text-sm mb-1">Password</label>
-          <input
-            type="password"
+          <PasswordInput
             name="password"
             value={form.password}
             onChange={handleChange}
             required
             minLength={6}
-            className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700"
           />
         </div>
         <button
