@@ -80,4 +80,39 @@ class JobMatchRequest(BaseModel):
 class MatchScoreResponse(BaseModel):
     score: float
     recommendation: Optional[str] = None
+    missing_keywords: Optional[list[str]] = None
+    matched_keywords: Optional[list[str]] = None
+    resume_text: Optional[str] = None
+
+
+from enum import Enum
+
+
+class ExperienceLevel(str, Enum):
+    junior = "junior"
+    mid = "mid"
+    senior = "senior"
+
+
+class InterviewQuestion(BaseModel):
+    question: str
+    answer: str
+
+
+class InterviewCategory(BaseModel):
+    category: str
+    questions: list[InterviewQuestion]
+
+
+class InterviewQuestionsRequest(BaseModel):
+    resume_text: str
+    job_description: str
+    experience_level: Optional[ExperienceLevel] = None
+    questions_per_category: int = 3
+
+
+class InterviewQuestionsResponse(BaseModel):
+    candidate_experience_level: str
+    categories: list[InterviewCategory]
+    model_used: Optional[str] = None
 

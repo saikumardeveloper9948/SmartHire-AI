@@ -24,6 +24,10 @@ class Settings:
     )
     OTP_EXPIRY_MINUTES: int = int(os.getenv("OTP_EXPIRY_MINUTES", "5"))
 
+    # OpenAI configuration (set via environment variables, do NOT commit keys to source)
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+
 
 settings = Settings()
 

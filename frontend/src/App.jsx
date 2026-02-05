@@ -9,6 +9,7 @@ import VerifyOtp from "./pages/VerifyOtp";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import ResumeMatch from "./pages/ResumeMatch";
+import InterviewQuestions from "./pages/InterviewQuestions";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -95,6 +96,14 @@ const App = () => {
             element={
               <PrivateRoute>
                 <ResumeMatch showAlert={showAlert} />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/ai/interview-questions"
+            element={
+              <PrivateRoute>
+                <InterviewQuestions />
               </PrivateRoute>
             }
           />

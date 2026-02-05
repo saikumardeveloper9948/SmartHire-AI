@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -21,7 +21,7 @@ app = FastAPI(title="SmartHire AI")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # For production, restrict this
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # For development, restrict this in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -321,8 +321,69 @@ def analyze_resume(payload: schemas.ResumeAnalysisRequest):
 
 @app.post("/ai/match-job", response_model=schemas.MatchScoreResponse)
 def match_job(payload: schemas.JobMatchRequest):
-    score, recommendation = ai_engine.compute_match_score(
+    score, recommendation, missing, matched = ai_engine.compute_match_score(
         payload.resume_text, payload.job_description
     )
-    return schemas.MatchScoreResponse(score=score, recommendation=recommendation)
+    return schemas.MatchScoreResponse(
+        score=score,
+        recommendation=recommendation,
+        missing_keywords=missing,
+        matched_keywords=matched,
+        resume_text=payload.resume_text,
+    )
+
+
+def _extract_text_from_upload(upload: UploadFile, data: bytes) -> str:
+    import io
+
+    from PyPDF2 import PdfReader
+    import docx
+
+    filename = (upload.filename or "").lower()
+    if filename.endswith(".pdf"):
+        reader = PdfReader(io.BytesIO(data))
+        pages = [page.extract_text() or "" for page in reader.pages]
+        return "\n".join(pages)
+    elif filename.endswith(".docx"):
+        document = docx.Document(io.BytesIO(data))
+        return "\n".join(p.text for p in document.paragraphs)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported file type. Please upload a PDF or DOCX file.",
+        )
+
+
+@app.post("/ai/match-job-file", response_model=schemas.MatchScoreResponse)
+async def match_job_file(
+    file: UploadFile = File(...),
+    job_description: str = Form(...),
+):
+    data = await file.read()
+    resume_text = _extract_text_from_upload(file, data)
+    score, recommendation, missing, matched = ai_engine.compute_match_score(
+        resume_text, job_description
+    )
+    return schemas.MatchScoreResponse(
+        score=score,
+        recommendation=recommendation,
+        missing_keywords=missing,
+        matched_keywords=matched,
+        resume_text=resume_text,
+    )
+
+
+@app.post("/ai/interview-questions", response_model=schemas.InterviewQuestionsResponse)
+def interview_questions(payload: schemas.InterviewQuestionsRequest):
+    """Generate interview questions via OpenAI based on resume and job description."""
+    try:
+        result = ai_engine.generate_interview_questions(
+            payload.resume_text,
+            payload.job_description,
+            payload.experience_level.value if payload.experience_level else None,
+            payload.questions_per_category,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
