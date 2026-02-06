@@ -11,8 +11,7 @@ __pycache__/
 
 
 # Env files
-.env
-**/.env
+
 
 # Python
 __pycache__/
