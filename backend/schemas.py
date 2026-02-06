@@ -116,3 +116,5 @@ class InterviewQuestionsResponse(BaseModel):
     categories: list[InterviewCategory]
     model_used: Optional[str] = None
 
+    model_config = {"protected_namespaces": ()}
+

@@ -6,8 +6,8 @@ import aiosmtplib
 from email.message import EmailMessage
 from sqlalchemy.orm import Session
 
-from .config import settings
-from .models import EmailOTP, User
+from config import settings
+from models import EmailOTP, User
 
 
 def generate_otp() -> str:

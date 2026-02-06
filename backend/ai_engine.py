@@ -1,4 +1,5 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Set
+
 
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -10,7 +11,7 @@ def _preprocess_text(text: str) -> str:
     return " ".join(text.lower().split())
 
 
-def _tokenize(text: str) -> set[str]:
+def _tokenize(text: str) -> Set[str]:
     # Basic word tokenizer for keyword comparison
     return set(re.findall(r"[a-zA-Z]{3,}", text.lower()))
 
@@ -79,7 +80,7 @@ def compute_match_score(resume_text: str, job_description: str) -> Tuple[float, 
     return score, recommendation, missing, matched
 
 
-def generate_interview_questions(resume_text: str, job_description: str, experience_level: str | None = None, questions_per_category: int = 3) -> dict:
+def generate_interview_questions(resume_text: str, job_description: str, experience_level: Optional[str] = None, questions_per_category: int = 3) -> dict:
     """
     Generate interview questions and short model answers using OpenAI.
 
@@ -94,16 +95,36 @@ def generate_interview_questions(resume_text: str, job_description: str, experie
       "model_used": "gpt-3.5-turbo"
     }
     """
-    from .config import settings
+    import logging
+    import os
+    import json
+    logger = logging.getLogger(__name__)
+    
+    from config import settings
     try:
-        import openai
+        from openai import OpenAI
     except Exception as e:
+        logger.error(f"Failed to import OpenAI: {str(e)}")
         raise ValueError("Missing `openai` package. Install with `pip install openai`.") from e
 
     if not (settings.OPENAI_API_KEY):
+        logger.error("OpenAI API key not configured")
         raise ValueError("OpenAI API key not configured. Set OPENAI_API_KEY in environment.")
 
-    openai.api_key = settings.OPENAI_API_KEY
+    logger.info("Initializing OpenAI client")
+    try:
+        # Set API key as environment variable for OpenAI client
+        os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
+        client = OpenAI()
+    except TypeError as e:
+        logger.error(f"TypeError initializing OpenAI client: {str(e)}")
+        # Fallback: try with explicit api_key parameter
+        try:
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        except Exception as e2:
+            logger.error(f"Failed to initialize OpenAI client: {str(e2)}")
+            raise ValueError(f"Failed to initialize OpenAI client: {str(e2)}") from e2
+    
     model = settings.OPENAI_MODEL or "gpt-3.5-turbo"
 
     exp = experience_level or "mid"
@@ -125,7 +146,8 @@ def generate_interview_questions(resume_text: str, job_description: str, experie
     )
 
     try:
-        resp = openai.ChatCompletion.create(
+        logger.info(f"Calling OpenAI API with model: {model}")
+        resp = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that outputs valid JSON, and nothing else."},
@@ -134,16 +156,26 @@ def generate_interview_questions(resume_text: str, job_description: str, experie
             temperature=0.2,
             max_tokens=800,
         )
-        content = resp["choices"][0]["message"]["content"]
-        import json
+        logger.info("OpenAI API call successful")
+        
+        content = resp.choices[0].message.content
+        logger.info(f"Raw response content: {content[:200]}...")
+        
         parsed = json.loads(content)
+        logger.info(f"Successfully parsed JSON response")
+        
         # Basic validation of structure
         if "categories" not in parsed:
+            logger.error("OpenAI response did not include 'categories'")
             raise ValueError("OpenAI response did not include 'categories'.")
+        
         parsed["model_used"] = model
+        logger.info("Response validated and formatted")
         return parsed
     except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON from OpenAI response: {str(e)}")
         raise ValueError("Failed to parse JSON from OpenAI response.") from e
     except Exception as e:
+        logger.error(f"OpenAI API error: {type(e).__name__}: {str(e)}", exc_info=True)
         raise ValueError("OpenAI API error: " + str(e)) from e
 

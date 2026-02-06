@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# Add parent directory to path to enable backend module imports when running from backend directory
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import uuid
 from datetime import datetime, timedelta
 
@@ -5,11 +11,13 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, sta
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from . import ai_engine, models, schemas
-from .config import settings
-from .database import Base, engine, get_db
-from .email_utils import generate_otp, send_otp_email, send_forgot_password_otp
-from .security import (
+import ai_engine
+import models
+import schemas
+from config import settings
+from database import Base, engine, get_db
+from email_utils import generate_otp, send_otp_email, send_forgot_password_otp
+from security import (
     create_access_token,
     get_password_hash,
     verify_password,
@@ -373,17 +381,33 @@ async def match_job_file(
     )
 
 
-@app.post("/ai/interview-questions", response_model=schemas.InterviewQuestionsResponse)
+@app.post("/ai/interview-questions")
 def interview_questions(payload: schemas.InterviewQuestionsRequest):
     """Generate interview questions via OpenAI based on resume and job description."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"Starting interview questions generation")
+        logger.info(f"Resume length: {len(payload.resume_text)}, Job desc length: {len(payload.job_description)}")
+        
         result = ai_engine.generate_interview_questions(
             payload.resume_text,
             payload.job_description,
             payload.experience_level.value if payload.experience_level else None,
             payload.questions_per_category,
         )
+        
+        logger.info(f"Successfully generated interview questions")
+        logger.info(f"Result: {result}")
+        
         return result
     except ValueError as e:
+        logger.error(f"ValueError in interview questions: {str(e)}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    except Exception as e:
+        import traceback
+        error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        logger.error(f"Error in interview questions: {error_msg}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error: {type(e).__name__}: {str(e)}")
 
